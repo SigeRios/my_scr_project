@@ -1,6 +1,7 @@
 import os
 import boto3
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 
 app = FastAPI()
 
@@ -20,14 +21,18 @@ s3 = boto3.client(
     aws_secret_access_key=AWS_SECRET_ACCESS_KEY
 )
 
+class UploadData(BaseModel):
+    file_name: str
+    data: str
+
 @app.get("/")
 def read_root():
     return {"message": "Hello World"}
 
 @app.post("/upload")
-def upload_data(file_name: str, data: str):
+def upload_data(data: UploadData):
     try:
-        s3.put_object(Bucket=BUCKET_NAME, Key=file_name, Body=data)
+        s3.put_object(Bucket=BUCKET_NAME, Key=data.file_name, Body=data.data)
         return {"message": "Data uploaded"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
